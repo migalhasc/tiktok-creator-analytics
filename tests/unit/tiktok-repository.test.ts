@@ -97,20 +97,18 @@ function buildSnapshot(): CachedProfileSnapshot {
 }
 
 describe("TikTokRepository.persistSnapshot", () => {
-  it("writes daily profile and post snapshots from a successful refresh", async () => {
+  it("persists profile and posts without writing daily snapshots in the no-snapshots variant", async () => {
     const profileSelectSingle = vi.fn().mockResolvedValue({
       data: { id: "profile-1", username: "demo" },
       error: null,
     });
     const profileSelect = vi.fn().mockReturnValue({ single: profileSelectSingle });
     const profileUpsert = vi.fn().mockReturnValue({ select: profileSelect });
-    const profileDailyUpsert = vi.fn().mockResolvedValue({ error: null });
     const postsSelect = vi.fn().mockResolvedValue({
       data: [{ id: "post-1", tiktok_post_id: "111" }],
       error: null,
     });
     const postsUpsert = vi.fn().mockReturnValue({ select: postsSelect });
-    const postDailyUpsert = vi.fn().mockResolvedValue({ error: null });
     const postsDeleteLt = vi.fn().mockResolvedValue({ error: null });
     const postsDeleteEq = vi.fn().mockReturnValue({ lt: postsDeleteLt });
     const postsDelete = vi.fn().mockReturnValue({ eq: postsDeleteEq });
@@ -121,12 +119,8 @@ describe("TikTokRepository.persistSnapshot", () => {
         switch (table) {
           case "profiles":
             return { upsert: profileUpsert };
-          case "profile_daily_snapshots":
-            return { upsert: profileDailyUpsert };
           case "posts":
             return { upsert: postsUpsert, delete: postsDelete };
-          case "post_daily_snapshots":
-            return { upsert: postDailyUpsert };
           case "fetch_runs":
             return { insert: fetchRunsInsert };
           default:
@@ -142,45 +136,17 @@ describe("TikTokRepository.persistSnapshot", () => {
     const result = await repository.persistSnapshot(buildPersistInput());
 
     expect(result).toBe(expectedSnapshot);
-    expect(profileDailyUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        profile_id: "profile-1",
-        snapshot_date: "2026-05-11",
-        collected_at: "2026-05-11T13:30:00.000Z",
-        collection_source: "test-refresh",
-        followers: 120,
-        total_likes: 420,
-        total_posts: 9,
-      }),
-      { onConflict: "profile_id,snapshot_date" },
-    );
-    expect(postDailyUpsert).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({
-          post_id: "post-1",
-          snapshot_date: "2026-05-11",
-          collected_at: "2026-05-11T13:30:00.000Z",
-          collection_source: "test-refresh",
-          views: 1200,
-          likes: 100,
-          comments: 15,
-          shares: 5,
-          saves: null,
-          reposts: null,
-        }),
-      ],
-      { onConflict: "post_id,snapshot_date" },
-    );
+    expect(client.from).not.toHaveBeenCalledWith("profile_daily_snapshots");
+    expect(client.from).not.toHaveBeenCalledWith("post_daily_snapshots");
   });
 
-  it("still writes the profile snapshot when no posts were returned", async () => {
+  it("still persists the profile when no posts were returned", async () => {
     const profileSelectSingle = vi.fn().mockResolvedValue({
       data: { id: "profile-1", username: "demo" },
       error: null,
     });
     const profileSelect = vi.fn().mockReturnValue({ single: profileSelectSingle });
     const profileUpsert = vi.fn().mockReturnValue({ select: profileSelect });
-    const profileDailyUpsert = vi.fn().mockResolvedValue({ error: null });
     const postsDeleteLt = vi.fn().mockResolvedValue({ error: null });
     const postsDeleteEq = vi.fn().mockReturnValue({ lt: postsDeleteLt });
     const postsDelete = vi.fn().mockReturnValue({ eq: postsDeleteEq });
@@ -191,8 +157,6 @@ describe("TikTokRepository.persistSnapshot", () => {
         switch (table) {
           case "profiles":
             return { upsert: profileUpsert };
-          case "profile_daily_snapshots":
-            return { upsert: profileDailyUpsert };
           case "posts":
             return { delete: postsDelete };
           case "fetch_runs":
@@ -215,28 +179,22 @@ describe("TikTokRepository.persistSnapshot", () => {
       }),
     );
 
-    expect(profileDailyUpsert).toHaveBeenCalledTimes(1);
+    expect(profileUpsert).toHaveBeenCalledTimes(1);
     expect(client.from).not.toHaveBeenCalledWith("post_daily_snapshots");
   });
 
-  it("degrades gracefully when snapshot tables are not available yet", async () => {
+  it("does not depend on snapshot tables being present", async () => {
     const profileSelectSingle = vi.fn().mockResolvedValue({
       data: { id: "profile-1", username: "demo" },
       error: null,
     });
     const profileSelect = vi.fn().mockReturnValue({ single: profileSelectSingle });
     const profileUpsert = vi.fn().mockReturnValue({ select: profileSelect });
-    const profileDailyUpsert = vi.fn().mockResolvedValue({
-      error: { code: "PGRST205", message: "Could not find the table 'public.profile_daily_snapshots' in the schema cache" },
-    });
     const postsSelect = vi.fn().mockResolvedValue({
       data: [{ id: "post-1", tiktok_post_id: "111" }],
       error: null,
     });
     const postsUpsert = vi.fn().mockReturnValue({ select: postsSelect });
-    const postDailyUpsert = vi.fn().mockResolvedValue({
-      error: { code: "PGRST205", message: "Could not find the table 'public.post_daily_snapshots' in the schema cache" },
-    });
     const postsDeleteLt = vi.fn().mockResolvedValue({ error: null });
     const postsDeleteEq = vi.fn().mockReturnValue({ lt: postsDeleteLt });
     const postsDelete = vi.fn().mockReturnValue({ eq: postsDeleteEq });
@@ -247,12 +205,8 @@ describe("TikTokRepository.persistSnapshot", () => {
         switch (table) {
           case "profiles":
             return { upsert: profileUpsert };
-          case "profile_daily_snapshots":
-            return { upsert: profileDailyUpsert };
           case "posts":
             return { upsert: postsUpsert, delete: postsDelete };
-          case "post_daily_snapshots":
-            return { upsert: postDailyUpsert };
           case "fetch_runs":
             return { insert: fetchRunsInsert };
           default:
@@ -268,8 +222,8 @@ describe("TikTokRepository.persistSnapshot", () => {
     const result = await repository.persistSnapshot(buildPersistInput());
 
     expect(result).toBe(expectedSnapshot);
-    expect(profileDailyUpsert).toHaveBeenCalledTimes(1);
-    expect(postDailyUpsert).toHaveBeenCalledTimes(1);
+    expect(client.from).not.toHaveBeenCalledWith("profile_daily_snapshots");
+    expect(client.from).not.toHaveBeenCalledWith("post_daily_snapshots");
   });
 });
 

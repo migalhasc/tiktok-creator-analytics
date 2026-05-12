@@ -2,6 +2,7 @@ import { Bookmark, ExternalLink, Heart, MessageCircle, Share2, type LucideIcon }
 import type { DashboardPayload, DashboardPost } from "@shared/domain";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { hasPeriodHistory } from "@/lib/dashboard";
 import { formatCompactNumber, formatPercent, formatPostDate } from "@/lib/format";
 
 type PostsListProps = {
@@ -15,6 +16,14 @@ function formatScore(value: number | null): string {
 
 function formatWindowViews(post: DashboardPost): string {
   return formatCompactNumber(post.periodViews.delta ?? post.periodViews.endValue ?? post.views);
+}
+
+function calculateRate(numerator: number | null, denominator: number | null): number | null {
+  if (numerator == null || denominator == null || denominator <= 0) {
+    return null;
+  }
+
+  return (numerator / denominator) * 100;
 }
 
 function buildSignals(post: DashboardPost): string[] {
@@ -47,6 +56,8 @@ function PostMetric({ icon: Icon, label, value }: PostMetricProps) {
 }
 
 export function PostsList({ dashboard }: PostsListProps) {
+  const hasHistory = hasPeriodHistory(dashboard);
+
   if (dashboard.posts.length === 0) {
     return (
       <Card>
@@ -55,6 +66,41 @@ export function PostsList({ dashboard }: PostsListProps) {
         </CardContent>
       </Card>
     );
+  }
+
+  const averageEngagementRate = calculateRate(
+    dashboard.lifetimeAggregates.totalEngagement,
+    dashboard.lifetimeAggregates.totalViews,
+  );
+  const averageShareRate = calculateRate(
+    dashboard.lifetimeAggregates.totalShares,
+    dashboard.lifetimeAggregates.totalViews,
+  );
+  const averageSaveRate = calculateRate(
+    dashboard.lifetimeAggregates.totalSaves,
+    dashboard.lifetimeAggregates.totalViews,
+  );
+
+  function buildPublicSignals(post: DashboardPost): string[] {
+    const signals: string[] = [];
+
+    if (
+      post.rates.engagementRate != null &&
+      averageEngagementRate != null &&
+      post.rates.engagementRate >= averageEngagementRate * 1.15
+    ) {
+      signals.push("ER acima da média");
+    }
+
+    if (post.rates.shareRate != null && averageShareRate != null && post.rates.shareRate >= averageShareRate * 1.15) {
+      signals.push("Share forte");
+    }
+
+    if (post.rates.saveRate != null && averageSaveRate != null && post.rates.saveRate >= averageSaveRate * 1.15) {
+      signals.push("Save forte");
+    }
+
+    return signals.slice(0, 3);
   }
 
   return (
@@ -70,17 +116,17 @@ export function PostsList({ dashboard }: PostsListProps) {
                 <th className="px-6 py-3 font-medium">#</th>
                 <th className="px-6 py-3 font-medium">Publicação</th>
                 <th className="px-6 py-3 font-medium">Métricas básicas</th>
-                <th className="px-6 py-3 font-medium text-right">Views na janela</th>
+                <th className="px-6 py-3 font-medium text-right">{hasHistory ? "Views na janela" : "Views públicas"}</th>
                 <th className="px-6 py-3 font-medium text-right">Eficiência</th>
                 <th className="px-6 py-3 font-medium text-right">Score</th>
-                <th className="px-6 py-3 font-medium">Sinais</th>
+                {hasHistory ? <th className="px-6 py-3 font-medium">Sinais</th> : null}
                 <th className="px-6 py-3 font-medium">Publicado em</th>
                 <th className="px-6 py-3 font-medium">Ação</th>
               </tr>
             </thead>
             <tbody>
               {dashboard.posts.map((post, index) => {
-                const signals = buildSignals(post);
+                const signals = hasHistory ? buildSignals(post) : buildPublicSignals(post);
 
                 return (
                   <tr key={post.id} className="border-b border-border align-top last:border-b-0">
@@ -131,15 +177,17 @@ export function PostsList({ dashboard }: PostsListProps) {
                       <p className="text-xs text-muted-foreground">Share {formatPercent(post.rates.shareRate)}</p>
                     </td>
                     <td className="px-6 py-4 text-right font-medium text-foreground">{formatScore(post.score)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex min-w-[180px] flex-wrap gap-2">
-                        {signals.length > 0 ? (
-                          signals.map((signal) => <Badge key={signal}>{signal}</Badge>)
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Sem sinais</span>
-                        )}
-                      </div>
-                    </td>
+                    {hasHistory ? (
+                      <td className="px-6 py-4">
+                        <div className="flex min-w-[180px] flex-wrap gap-2">
+                          {signals.length > 0 ? (
+                            signals.map((signal) => <Badge key={signal}>{signal}</Badge>)
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Sem sinais</span>
+                          )}
+                        </div>
+                      </td>
+                    ) : null}
                     <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">{formatPostDate(post.publishedAt)}</td>
                     <td className="px-6 py-4">
                       <a

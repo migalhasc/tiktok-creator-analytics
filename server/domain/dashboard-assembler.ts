@@ -249,6 +249,46 @@ function buildRateRows(periodMetrics: PostPeriodMetrics[]): Array<RankablePostMe
   }));
 }
 
+function buildCurrentRankablePostMetrics(posts: DashboardPost[]): RankablePostMetrics[] {
+  return posts.map((post) => ({
+    postId: post.id,
+    engagementRate: calculateEngagementRate({
+      views: post.views,
+      likes: post.likes,
+      comments: post.comments,
+      shares: post.shares,
+      saves: post.saves,
+      reposts: post.reposts,
+    }),
+    shareRate: calculateShareRate({
+      views: post.views,
+      shares: post.shares,
+    }),
+    commentRate: calculateCommentRate({
+      views: post.views,
+      comments: post.comments,
+    }),
+    saveRate: calculateSaveRate({
+      views: post.views,
+      saves: post.saves,
+    }),
+    repostRate: calculateRepostRate({
+      views: post.views,
+      reposts: post.reposts,
+    }),
+    engagementPerThousandViews: calculateEngagementPerThousandViews({
+      views: post.views,
+      likes: post.likes,
+      comments: post.comments,
+      shares: post.shares,
+      saves: post.saves,
+      reposts: post.reposts,
+    }),
+    viewsDelta: post.views,
+    viewsDeltaVsPrevious: null,
+  }));
+}
+
 function buildEnrichedPosts(args: {
   snapshot: CachedProfileSnapshot;
   range: SearchRange;
@@ -267,15 +307,16 @@ function buildEnrichedPosts(args: {
     boundaries,
   );
   const rateRows = buildRateRows(postPeriodMetrics);
-  const rankableMetrics = buildRankablePostMetrics(postPeriodMetrics, rateRows);
+  const hasHistory = postPeriodMetrics.some((metrics) => metrics.views.delta != null);
+  const fallbackRateRows = buildCurrentRankablePostMetrics(basePosts);
+  const activeRateRows = hasHistory ? rateRows : fallbackRateRows;
+  const rankableMetrics = hasHistory ? buildRankablePostMetrics(postPeriodMetrics, rateRows) : fallbackRateRows;
   const scores = calculateNormalizedScores(rankableMetrics);
 
   const metricsByPostId = new Map(postPeriodMetrics.map((metrics) => [metrics.postId, metrics]));
   const classificationByPostId = new Map(classifications.map((classification) => [classification.postId, classification]));
-  const ratesByPostId = new Map(rateRows.map((rates) => [rates.postId, rates]));
+  const ratesByPostId = new Map(activeRateRows.map((rates) => [rates.postId, rates]));
   const scoresByPostId = new Map(scores.map((score) => [score.postId, score.score]));
-
-  const hasHistory = postPeriodMetrics.some((metrics) => metrics.views.delta != null);
   const fallbackPosts = new Set(filterPostsByRange(args.snapshot.posts, args.range).map((post) => post.id));
 
   return basePosts

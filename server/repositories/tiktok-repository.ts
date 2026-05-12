@@ -16,10 +16,6 @@ function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
-function toSnapshotDate(value: string): string {
-  return value.slice(0, 10);
-}
-
 function isOptionalHistorySchemaError(error: { code?: string; message?: string } | null | undefined): boolean {
   if (!error) {
     return false;
@@ -224,7 +220,6 @@ export class TikTokRepository {
       ...input.profile.providerPayload,
       metric_support: input.profile.metricSupport,
     };
-    const snapshotDate = toSnapshotDate(input.fetchedAt);
 
     const { data: profile, error } = await this.client
       .from("profiles")
@@ -256,26 +251,6 @@ export class TikTokRepository {
 
     if (error || !profile) {
       throw this.toInfrastructureError(error?.message ?? "Falha ao salvar o perfil.");
-    }
-
-    const { error: profileDailySnapshotError } = await this.client.from("profile_daily_snapshots").upsert(
-      {
-        profile_id: profile.id,
-        snapshot_date: snapshotDate,
-        collected_at: input.fetchedAt,
-        collection_source: input.source,
-        followers: input.profile.followers,
-        following: input.profile.following,
-        total_likes: input.profile.likes,
-        total_posts: input.profile.videosCount,
-      },
-      {
-        onConflict: "profile_id,snapshot_date",
-      },
-    );
-
-    if (profileDailySnapshotError && !isOptionalHistorySchemaError(profileDailySnapshotError)) {
-      throw this.toInfrastructureError(profileDailySnapshotError.message);
     }
 
     if (input.posts.length > 0) {
@@ -310,41 +285,6 @@ export class TikTokRepository {
         throw this.toInfrastructureError(postsError?.message ?? "Falha ao salvar os posts.");
       }
 
-      const postIdByTikTokId = new Map(
-        (persistedPosts as Array<{ id: string; tiktok_post_id: string }>).map((post) => [post.tiktok_post_id, post.id]),
-      );
-
-      const postDailySnapshotRows = input.posts
-        .map((post) => {
-          const postId = postIdByTikTokId.get(post.tiktokPostId);
-          if (!postId) {
-            return null;
-          }
-
-          return {
-            post_id: postId,
-            snapshot_date: snapshotDate,
-            collected_at: input.fetchedAt,
-            collection_source: input.source,
-            views: post.views,
-            likes: post.likes,
-            comments: post.comments,
-            shares: post.shares,
-            saves: post.saves,
-            reposts: post.reposts,
-          };
-        })
-        .filter((row): row is NonNullable<typeof row> => row !== null);
-
-      if (postDailySnapshotRows.length > 0) {
-        const { error: postDailySnapshotsError } = await this.client.from("post_daily_snapshots").upsert(postDailySnapshotRows, {
-          onConflict: "post_id,snapshot_date",
-        });
-
-        if (postDailySnapshotsError && !isOptionalHistorySchemaError(postDailySnapshotsError)) {
-          throw this.toInfrastructureError(postDailySnapshotsError.message);
-        }
-      }
     }
 
     const { error: deleteError } = await this.client

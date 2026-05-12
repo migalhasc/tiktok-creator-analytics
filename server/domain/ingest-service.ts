@@ -3,7 +3,6 @@ import { buildProfileUrl, normalizeProfileInput } from "@shared/profile-input";
 import { BrightDataTikTokClient } from "./brightdata-client";
 import { assembleDashboard } from "./dashboard-assembler";
 import { TikTokProviderError, translateProviderError } from "./provider-errors";
-import { buildPeriodBoundaries } from "./snapshot-history";
 import type { CachedProfileSnapshot, PostDailySnapshotRow, ProfileDailySnapshotRow } from "./tiktok-types";
 import { TikTokRepository } from "../repositories/tiktok-repository";
 
@@ -13,7 +12,6 @@ type DashboardHistory = {
   profileDailySnapshots: ProfileDailySnapshotRow[];
   postDailySnapshots: PostDailySnapshotRow[];
 };
-type HistoryRepository = Pick<TikTokRepository, "getProfileDailySnapshots" | "getPostDailySnapshots">;
 
 export class TikTokIngestService {
   private readonly activeRefreshes = new Map<string, Promise<unknown>>();
@@ -356,27 +354,9 @@ export class TikTokIngestService {
   }
 
   private async loadDashboardHistory(snapshot: CachedProfileSnapshot, range: SearchRange): Promise<DashboardHistory> {
-    const repository = this.repository as Partial<HistoryRepository>;
-    const getProfileDailySnapshots = repository.getProfileDailySnapshots?.bind(this.repository);
-    const getPostDailySnapshots = repository.getPostDailySnapshots?.bind(this.repository);
-
-    if (!getProfileDailySnapshots || !getPostDailySnapshots) {
-      return {
-        profileDailySnapshots: [],
-        postDailySnapshots: [],
-      };
-    }
-
-    const boundaries = buildPeriodBoundaries(range);
-    const postIds = snapshot.posts.map((post) => post.id);
-    const [profileDailySnapshots, postDailySnapshots] = await Promise.all([
-      getProfileDailySnapshots(snapshot.profile.id, boundaries.previousStartDate, boundaries.currentEndDate),
-      postIds.length > 0 ? getPostDailySnapshots(postIds, boundaries.previousStartDate, boundaries.currentEndDate) : [],
-    ]);
-
     return {
-      profileDailySnapshots,
-      postDailySnapshots,
+      profileDailySnapshots: [],
+      postDailySnapshots: [],
     };
   }
 

@@ -307,10 +307,10 @@ describe("assembleDashboard", () => {
     expect(dashboard.aggregates.postsGrowingInPeriod).toBe(2);
     expect(dashboard.aggregates.postsPublishedInPeriod).toBe(1);
     expect(dashboard.aggregates.evergreenPosts).toBe(2);
-    expect(dashboard.posts.map((post) => post.id)).toEqual(["post-evergreen-1", "post-evergreen-2", "post-new"]);
-    expect(dashboard.posts[0].periodViews.delta).toBe(200);
-    expect(dashboard.posts[0].evergreen).toBe(true);
-    expect(dashboard.posts[2].publishedInPeriod).toBe(true);
+    expect(dashboard.posts.map((post) => post.id)).toEqual(["post-evergreen-2", "post-evergreen-1", "post-new"]);
+    expect(dashboard.posts.find((post) => post.id === "post-evergreen-1")?.periodViews.delta).toBe(200);
+    expect(dashboard.posts.find((post) => post.id === "post-evergreen-1")?.evergreen).toBe(true);
+    expect(dashboard.posts.find((post) => post.id === "post-new")?.publishedInPeriod).toBe(true);
     expect(dashboard.diagnostics.map((diagnostic) => diagnostic.id)).toEqual(
       expect.arrayContaining(["above-average-growth", "older-posts-driving-growth"]),
     );

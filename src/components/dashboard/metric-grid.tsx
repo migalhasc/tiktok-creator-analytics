@@ -189,11 +189,6 @@ const baselineMetrics: readonly MetricDefinition[] = [
     value: (dashboard: DashboardPayload) => formatCompactNumber(dashboard.lifetimeAggregates.postsCount),
     description: () => "Coleta atual",
   },
-  {
-    label: "Histórico da janela",
-    value: () => "Em formação",
-    description: () => "Aguardando snapshots",
-  },
 ] as const;
 
 export function MetricGrid({ dashboard }: MetricGridProps) {

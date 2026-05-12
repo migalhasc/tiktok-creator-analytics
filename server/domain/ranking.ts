@@ -126,6 +126,8 @@ export function toDashboardPosts(posts: PostRow[]): DashboardPost[] {
       "cover_url",
       "coverUrl",
       "cover_image",
+      "preview_image",
+      "previewImage",
       "thumbnail_url",
       "thumbnailUrl",
       "origin_cover",

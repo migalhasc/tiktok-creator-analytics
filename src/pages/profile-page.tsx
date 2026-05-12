@@ -19,11 +19,11 @@ import { DiagnosticsPanel } from "@/components/dashboard/diagnostics-panel";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { PostsList } from "@/components/dashboard/posts-list";
-import { hasPeriodHistory } from "@/lib/dashboard";
 import { SearchForm } from "@/components/search/search-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { hasPeriodHistory } from "@/lib/dashboard";
 import { formatCompactNumber, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { dashboardQueryKey, dashboardQueryPrefix, trpcClient } from "@/lib/trpc";
@@ -256,7 +256,8 @@ export function ProfilePage() {
 
   const dashboard = dashboardQuery.data;
   const isInitialCollection = dashboard.cacheStatus === "refreshing" && dashboard.posts.length === 0;
-  const periodHistoryReady = hasPeriodHistory(dashboard);
+  const showHistorySections = hasPeriodHistory(dashboard);
+  const showDiagnostics = dashboard.diagnostics.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -373,19 +374,14 @@ export function ProfilePage() {
             </div>
           ) : null}
 
-          {!periodHistoryReady ? (
-            <div className="rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-foreground">
-              Histórico diário em formação.
-            </div>
-          ) : null}
         </CardContent>
       </Card>
 
       <MetricGrid dashboard={dashboard} />
 
-      <OverviewChart dashboard={dashboard} />
+      {showHistorySections ? <OverviewChart dashboard={dashboard} /> : null}
 
-      <DiagnosticsPanel dashboard={dashboard} />
+      {showDiagnostics ? <DiagnosticsPanel dashboard={dashboard} /> : null}
 
       <Card>
         <CardContent className="space-y-6 px-6 py-6">

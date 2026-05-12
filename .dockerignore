@@ -1,0 +1,17 @@
+.DS_Store
+.env
+.env.*
+.git
+.vercel
+coverage
+dist
+node_modules
+playwright-report
+test-results
+*.tsbuildinfo
+api/**/*.js
+api/**/*.d.ts
+server/**/*.js
+server/**/*.d.ts
+shared/**/*.js
+shared/**/*.d.ts

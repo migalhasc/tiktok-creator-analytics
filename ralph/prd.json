@@ -1,0 +1,53 @@
+{
+  "project": "TikTok Creator Analytics",
+  "branchName": "ralph/creator-analytics-qa-hardening",
+  "description": "Harden creator-facing analytics behavior with deeper QA around realtime refresh, growth-window semantics, and legacy public-data fallbacks.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Validate manual refresh transitions to realtime state",
+      "description": "As a creator, I want manual refresh to visibly switch into an updating state and then return with fresh numbers so I trust the dashboard is live.",
+      "acceptanceCriteria": [
+        "Clicking Atualizar agora moves the dashboard into refreshing state immediately",
+        "Refreshing state polls until fresh data is shown again",
+        "Button stays disabled while refresh is in progress",
+        "Typecheck passes",
+        "Tests pass",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Verify creator-facing growth-window signals",
+      "description": "As a creator, I want to distinguish new posts from evergreen growers so the dashboard tells me whether growth came from fresh publishing or older winners.",
+      "acceptanceCriteria": [
+        "Dashboard can show an older post that grew in the window alongside a newly published post",
+        "Older growing posts show window-growth signals without being mislabeled as new",
+        "New posts in the same window show the new-post signal distinctly",
+        "Typecheck passes",
+        "Tests pass",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Protect legacy public-data rendering",
+      "description": "As a creator, I want older imported profiles to keep showing covers and basic public metrics so the dashboard does not degrade after schema changes.",
+      "acceptanceCriteria": [
+        "Legacy provider payload fields can still hydrate thumbnail and basic public metrics",
+        "Basic public metrics do not regress to N/D when values exist only in the raw provider payload",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    }
+  ]
+}

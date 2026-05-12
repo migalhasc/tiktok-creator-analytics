@@ -1,0 +1,246 @@
+{
+  "project": "TikTok Creator Analytics",
+  "branchName": "ralph/tiktok-growth-intelligence-refactor",
+  "description": "Refactor the public TikTok analytics dashboard into a growth intelligence system with snapshot-based period metrics, normalized rankings, and rule-based diagnostics.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add profile daily snapshot table",
+      "description": "As a developer, I need a dedicated daily profile snapshot table so period analytics can be calculated from history instead of lifetime counters.",
+      "acceptanceCriteria": [
+        "Add a profile daily snapshot table that stores profile reference, snapshot date, collected time, source, followers, following, total likes, and total posts",
+        "Enforce one logical snapshot per profile per day",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Add post daily snapshot table",
+      "description": "As a developer, I need a dedicated daily post snapshot table so per-post growth can be measured across time windows.",
+      "acceptanceCriteria": [
+        "Add a post daily snapshot table that stores post reference, snapshot date, collected time, source, views, likes, comments, shares, saves, and reposts",
+        "Keep saves and reposts nullable so missing public data is preserved as unavailable",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Persist profile snapshots on successful refresh",
+      "description": "As a developer, I want every successful public profile refresh to capture a daily profile snapshot automatically.",
+      "acceptanceCriteria": [
+        "Successful profile persistence also writes a profile daily snapshot for the fetched day",
+        "Repeated refreshes on the same day do not create duplicate logical profile snapshots",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Persist post snapshots on successful refresh",
+      "description": "As a developer, I want every successful post refresh to capture daily post snapshots so post growth can be computed later.",
+      "acceptanceCriteria": [
+        "Successful post persistence also writes daily snapshots for refreshed posts",
+        "Repeated refreshes on the same day do not create duplicate logical post snapshots",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Add snapshot boundary queries",
+      "description": "As a developer, I need snapshot lookup helpers for current-period and previous-period boundaries so analytics can read history consistently.",
+      "acceptanceCriteria": [
+        "Add read paths that fetch the closest available profile and post snapshots for period start, period end, previous period start, and previous period end",
+        "Boundary lookups return safe empty results when history is missing",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Calculate profile period deltas",
+      "description": "As a creator, I want real profile growth during a selected period so I can understand followers and account momentum correctly.",
+      "acceptanceCriteria": [
+        "Calculate profile period deltas for followers, following, total likes, and total posts using snapshot differences",
+        "Calculate previous-period deltas and percentage change for the same profile metrics when history is sufficient",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Calculate post period deltas",
+      "description": "As a creator, I want post growth to reflect what each post earned in the selected period, not its current lifetime total.",
+      "acceptanceCriteria": [
+        "Calculate per-post deltas for views, likes, comments, shares, saves, and reposts from snapshot differences",
+        "Keep missing saves and reposts unavailable instead of converting them to zero in delta calculations",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Classify posts by publication window and growth window",
+      "description": "As a creator, I want to distinguish posts published during the period from older posts that grew during the period.",
+      "acceptanceCriteria": [
+        "Classify posts into published-in-period and grew-in-period groups",
+        "Flag evergreen or late-growth candidates when older posts continue earning meaningful period growth",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Expand public efficiency metrics",
+      "description": "As a creator, I want relative quality metrics so I can compare posts fairly across different sizes.",
+      "acceptanceCriteria": [
+        "Calculate engagement rate using likes, comments, shares, saves, and reposts when available",
+        "Calculate share rate, comment rate, save rate, repost rate, and engagement per 1,000 views without inventing false zeros",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Add normalized post score calculator",
+      "description": "As a creator, I want the best-post ranking to reward efficient and repeatable posts instead of only the biggest ones.",
+      "acceptanceCriteria": [
+        "Create a normalized post score that combines available efficiency metrics with recent growth inputs",
+        "Ranking no longer defaults to absolute engagement total when score inputs are available",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Extend dashboard payload for lifetime and period analytics",
+      "description": "As a developer, I need a dashboard payload that separates lifetime data from period analytics so the UI can stay semantically correct.",
+      "acceptanceCriteria": [
+        "Add payload sections for lifetime metrics, period metrics, previous-period comparison, and post-growth analysis",
+        "Keep payload compatible with profiles that do not yet have enough snapshots by returning explicit fallback states",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Assemble snapshot-aware dashboard responses",
+      "description": "As a product owner, I want the dashboard assembler to use historical deltas as the source of truth for period performance.",
+      "acceptanceCriteria": [
+        "Dashboard assembly uses snapshot-based deltas for period performance and comparisons",
+        "Lifetime aggregates remain available alongside period analytics in the same response",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Make dashboard filters period-aware",
+      "description": "As a creator, I want the 7d, 30d, and 90d filters to reflect earned performance in the selected window.",
+      "acceptanceCriteria": [
+        "Selected dashboard ranges drive snapshot-based period calculations instead of published-at-only totals",
+        "Profiles with insufficient history show a safe fallback state rather than misleading period numbers",
+        "Typecheck passes",
+        "Tests pass",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Show lifetime and period overview metrics",
+      "description": "As a creator, I want to see current totals separately from period growth so I can read the dashboard without ambiguity.",
+      "acceptanceCriteria": [
+        "Dashboard overview shows distinct lifetime metrics and period metrics for the selected range",
+        "Overview includes current-period versus previous-period comparison where history exists",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Show recent growers and evergreen posts",
+      "description": "As a creator, I want to identify which posts recently gained the most and which older posts keep compounding.",
+      "acceptanceCriteria": [
+        "Dashboard shows a recent-growth ranking based on period deltas",
+        "Dashboard separately highlights evergreen or late-growth posts when older content keeps earning meaningful growth",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Add rule-based diagnostics engine",
+      "description": "As a creator, I want clear rule-based explanations of what is working so I do not have to infer every pattern manually.",
+      "acceptanceCriteria": [
+        "Generate diagnostics for above-average growth, high share rate, high volume with low efficiency, older posts driving growth, and profile slowdown versus previous period",
+        "Diagnostics consume the same snapshot-based metrics used elsewhere in the dashboard",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Render diagnostics and replication signals",
+      "description": "As a creator, I want actionable diagnostics and replication hints surfaced directly in the dashboard.",
+      "acceptanceCriteria": [
+        "Dashboard renders rule-based diagnostics in a dedicated section",
+        "Diagnostics include at least one replication-oriented signal tied to a winning pattern from public data",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

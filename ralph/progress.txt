@@ -1,0 +1,29 @@
+# Ralph Progress
+
+Project: TikTok Creator Analytics
+Branch: ralph/creator-analytics-qa-hardening
+Started: 2026-05-11
+
+## Completed
+
+- US-001 — Validate manual refresh transitions to realtime state
+  - The profile dashboard now switches to `refreshing` immediately after manual update, pushes the mutation state into the active query cache, and actively refetches until fresh data returns.
+  - Added Playwright coverage for creator-visible behavior: immediate updating banner, disabled refresh button, polling loop, and fresh follower count after completion.
+  - Validation: `npm run build`, `npm run test:e2e -- tests/e2e/profile-dashboard.spec.ts`.
+  - Learning: invalidating the query alone was not enough for a trustworthy live-refresh experience; the UI needed an optimistic cache transition plus faster polling.
+
+- US-002 — Verify creator-facing growth-window signals
+  - Added Playwright coverage for the creator-facing distinction between a newly published post and an older evergreen post that keeps growing in the current window.
+  - The dashboard test now confirms the right badges and metric cards are visible for `posts growing`, `new posts`, and `evergreen` behavior.
+  - Validation: `npm run build`, `npm run test:e2e -- tests/e2e/profile-dashboard.spec.ts`.
+  - Learning: this kind of QA is more valuable at the rendered-table level than only in unit tests because the product promise is interpretability, not just correct booleans.
+
+- US-003 — Protect legacy public-data rendering
+  - Confirmed legacy provider-payload hydration remains covered for likes, comments, shares, saves, views, and thumbnail fallback.
+  - Re-ran the focused ranking and provider parsing tests that protect older imported creator data from regressing to blank public metrics.
+  - Validation: `npm run test:unit -- tests/unit/ranking.test.ts tests/unit/brightdata-client.test.ts`.
+  - Learning: the legacy-payload path is important enough to treat as a first-class compatibility contract, not just a migration convenience.
+
+## Next
+
+- None. The Ralph QA hardening loop is complete in the workspace.

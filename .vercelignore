@@ -1,0 +1,11 @@
+dist
+test-results
+playwright-report
+coverage
+*.tsbuildinfo
+api/**/*.js
+api/**/*.d.ts
+server/**/*.js
+server/**/*.d.ts
+shared/**/*.js
+shared/**/*.d.ts

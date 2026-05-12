@@ -1,0 +1,29 @@
+http:
+  routers:
+    http-tiktokanalytics-supabase-fragment-0:
+      service: tiktokanalytics-supabase-fragment-0
+      rule: Host(`tiktokanalytics-supabase.ickanz.easypanel.host`) && PathPrefix(`/`)
+      priority: 0
+      middlewares:
+        - redirect-to-https@file
+        - bad-gateway-error-page@file
+      entryPoints:
+        - http
+    https-tiktokanalytics-supabase-fragment-0:
+      service: tiktokanalytics-supabase-fragment-0
+      rule: Host(`tiktokanalytics-supabase.ickanz.easypanel.host`) && PathPrefix(`/`)
+      priority: 0
+      middlewares:
+        - bad-gateway-error-page@file
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: tiktokanalytics-supabase.ickanz.easypanel.host
+      entryPoints:
+        - https
+  services:
+    tiktokanalytics-supabase-fragment-0:
+      loadBalancer:
+        servers:
+          - url: http://tiktokanalytics_supabase_kong:8000/
+        passHostHeader: true

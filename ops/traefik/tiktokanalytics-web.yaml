@@ -1,0 +1,29 @@
+http:
+  routers:
+    http-tiktokanalytics-web-fragment-0:
+      service: tiktokanalytics-web-fragment-0
+      rule: Host(`tiktokanalytics.ickanz.easypanel.host`) && PathPrefix(`/`)
+      priority: 0
+      middlewares:
+        - redirect-to-https@file
+        - bad-gateway-error-page@file
+      entryPoints:
+        - http
+    https-tiktokanalytics-web-fragment-0:
+      service: tiktokanalytics-web-fragment-0
+      rule: Host(`tiktokanalytics.ickanz.easypanel.host`) && PathPrefix(`/`)
+      priority: 0
+      middlewares:
+        - bad-gateway-error-page@file
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: tiktokanalytics.ickanz.easypanel.host
+      entryPoints:
+        - https
+  services:
+    tiktokanalytics-web-fragment-0:
+      loadBalancer:
+        servers:
+          - url: http://tiktokanalytics-web:3000/
+        passHostHeader: true

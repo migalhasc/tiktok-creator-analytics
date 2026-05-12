@@ -1,0 +1,50 @@
+# Ralph Progress
+
+Project: TikTok Creator Analytics
+Branch: ralph/tiktok-growth-intelligence-refactor
+Started: 2026-05-11
+
+## Completed
+
+- US-001 — Add profile daily snapshot table
+  - Added `profile_daily_snapshots` migration with daily uniqueness per profile and indexes for period lookups.
+  - Validation: `npm run build`, `npm run test:unit`.
+  - Learning: immutable snapshot tables fit the existing schema style well, so later stories can treat history as append-only data.
+
+- US-002 — Add post daily snapshot table
+  - Added `post_daily_snapshots` migration with nullable public metrics and daily uniqueness per post.
+  - Validation: `npm run build`, `npm run test:unit`.
+  - Learning: keeping `saves` and `reposts` nullable at the schema level preserves the “unavailable vs zero” distinction required by the PRD.
+
+- US-003 to US-007 — Persist snapshots and calculate deltas
+  - Successful refreshes now persist daily profile and post snapshots without duplicating the same logical day.
+  - Added repository read paths plus snapshot-boundary helpers for current and previous windows.
+  - Added dedicated delta-calculation modules for profile and post metrics using snapshot differences.
+  - Validation: `npm run build`, `npm run test:unit`.
+  - Learning: keeping boundaries and deltas isolated made the period math much easier to test and reuse.
+
+- US-008 to US-010 — Growth classification, efficiency metrics, and normalized ranking
+  - Added post growth classification for published-in-period, grew-in-period, evergreen, and late-growth signals.
+  - Added public efficiency metrics including engagement rate, share rate, comment rate, save rate, repost rate, and engagement per 1,000 views.
+  - Replaced absolute-volume ranking with a normalized score that blends efficiency and recent growth.
+  - Validation: `npm run build`, `npm run test:unit`.
+  - Learning: a score layered on top of raw deltas gives better “what to repeat next” behavior than sorting by a single metric.
+
+- US-011 to US-013 — Snapshot-aware dashboard payload and period-aware filters
+  - Extended the dashboard payload with lifetime aggregates, period boundaries, profile period metrics, daily series, and richer post analytics.
+  - Updated ingest flow so every dashboard assembly loads the historical slice needed for the selected range.
+  - The `7d/30d/90d` filters now use snapshot-based earned performance when history exists and safe publication-based fallback when it does not.
+  - Validation: `npm run build`, `npm run test:unit`, `npm run test:e2e`.
+  - Learning: keeping fallback states explicit avoided misleading period numbers while preserving a usable dashboard for new profiles.
+
+- US-014 to US-017 — UI refactor for growth intelligence and diagnostics
+  - Refactored the dashboard UI to distinguish current base metrics from growth-in-window metrics.
+  - Rebuilt the overview chart and posts table around period growth, efficiency rates, evergreen signals, and normalized score.
+  - Added a diagnostics panel plus surfaced data-coverage clarity in the dashboard itself.
+  - Expanded unit and Playwright fixtures to exercise the new payload shape end to end.
+  - Validation: `npm run build`, `npm run test:unit`, `npm run test:e2e`.
+  - Learning: once the payload semantics were correct, the UI became much simpler to reason about and the copy no longer had to compensate for backend ambiguity.
+
+## Next
+
+- None. The Ralph loop for this PRD is complete in the workspace.

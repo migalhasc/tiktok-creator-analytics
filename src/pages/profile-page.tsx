@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hasPeriodHistory } from "@/lib/dashboard";
+import { buildDashboardSearchParams, buildProfilePath } from "@/lib/embed";
 import { formatCompactNumber, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { dashboardQueryKey, dashboardQueryPrefix, trpcClient } from "@/lib/trpc";
@@ -95,7 +96,11 @@ function PendingProfileShell(props: {
   );
 }
 
-export function ProfilePage() {
+type ProfilePageProps = {
+  embedMode?: boolean;
+};
+
+export function ProfilePage({ embedMode = false }: ProfilePageProps) {
   const { username: routeUsername } = useParams();
   const navigate = useNavigate();
   const reactQueryClient = useQueryClient();
@@ -121,14 +126,14 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (!routeUsername || !username) {
-      navigate("/", { replace: true });
+      navigate(withEmbedHomePath(embedMode), { replace: true });
       return;
     }
 
     if (rangeParam !== range || sortParam !== sort) {
-      setSearchParams({ range, sort }, { replace: true });
+      setSearchParams(buildDashboardSearchParams(range, sort, embedMode), { replace: true });
     }
-  }, [navigate, range, rangeParam, routeUsername, setSearchParams, sort, sortParam, username]);
+  }, [embedMode, navigate, range, rangeParam, routeUsername, setSearchParams, sort, sortParam, username]);
 
   const dashboardQuery = useQuery({
     queryKey: username ? dashboardQueryKey(username, range, sort) : ["dashboard", "missing"],
@@ -187,7 +192,7 @@ export function ProfilePage() {
       setSearchError(null);
       setSearchValue("");
       startTransition(() => {
-        navigate(`/perfil/${normalized.username}?range=${defaultRange}&sort=${defaultSort}`);
+        navigate(buildProfilePath(normalized.username, defaultRange, defaultSort, embedMode));
       });
     } catch (error) {
       setSearchError(error instanceof Error ? error.message : "Use um username simples ou o link público do perfil.");
@@ -213,9 +218,9 @@ export function ProfilePage() {
 
     const visibleSorts = resolvePublicSorts(dashboard);
     if (!visibleSorts.includes(sort)) {
-      setSearchParams({ range, sort: defaultSort }, { replace: true });
+      setSearchParams(buildDashboardSearchParams(range, defaultSort, embedMode), { replace: true });
     }
-  }, [dashboardQuery.data, range, setSearchParams, sort]);
+  }, [dashboardQuery.data, embedMode, range, setSearchParams, sort]);
 
   if (dashboardQuery.isPending && !dashboardQuery.data && username) {
     return (
@@ -305,7 +310,7 @@ export function ProfilePage() {
                     disabled={dashboardQuery.isFetching || isPendingTransition}
                     onClick={() =>
                       startTransition(() => {
-                        setSearchParams({ range: rangeOption, sort });
+                        setSearchParams(buildDashboardSearchParams(rangeOption, sort, embedMode));
                       })
                     }
                     className={cn(
@@ -393,7 +398,7 @@ export function ProfilePage() {
             isPending={isPendingTransition || dashboardQuery.isFetching}
             onSortChange={(nextSort) =>
               startTransition(() => {
-                setSearchParams({ range, sort: nextSort });
+                setSearchParams(buildDashboardSearchParams(range, nextSort, embedMode));
               })
             }
           />
@@ -403,4 +408,8 @@ export function ProfilePage() {
       <PostsList dashboard={dashboard} />
     </div>
   );
+}
+
+function withEmbedHomePath(embedMode: boolean) {
+  return embedMode ? "/?embed=1" : "/";
 }

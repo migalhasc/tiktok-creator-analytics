@@ -4,8 +4,13 @@ import { defaultRange, defaultSort } from "@shared/domain";
 import { normalizeProfileInput } from "@shared/profile-input";
 import { SearchForm } from "@/components/search/search-form";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildProfilePath } from "@/lib/embed";
 
-export function HomePage() {
+type HomePageProps = {
+  embedMode?: boolean;
+};
+
+export function HomePage({ embedMode = false }: HomePageProps) {
   const [value, setValue] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPendingTransition, startTransition] = useTransition();
@@ -30,7 +35,7 @@ export function HomePage() {
       const normalized = normalizeProfileInput(value);
       setErrorMessage(null);
       startTransition(() => {
-        navigate(`/perfil/${normalized.username}?range=${defaultRange}&sort=${defaultSort}`);
+        navigate(buildProfilePath(normalized.username, defaultRange, defaultSort, embedMode));
       });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Use um username simples ou o link público do perfil.");

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { ServerResponse } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
+import { applySecurityHeaders } from "./security-headers";
 import { appRouter } from "./trpc/router";
 import { createContextFromHeaders } from "./trpc/context";
 
@@ -57,6 +58,8 @@ async function sendFile(res: ServerResponse, filePath: string, statusCode = 200)
 const server = createServer(async (req, res) => {
   const method = req.method ?? "GET";
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+
+  applySecurityHeaders(res);
 
   if (url.pathname.startsWith("/api/trpc")) {
     return trpcHandler(req, res);

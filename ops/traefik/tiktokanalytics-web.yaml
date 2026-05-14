@@ -7,6 +7,7 @@ http:
       middlewares:
         - redirect-to-https@file
         - bad-gateway-error-page@file
+        - tiktokanalytics-frame-ancestors
       entryPoints:
         - http
     https-tiktokanalytics-web-fragment-0:
@@ -15,12 +16,17 @@ http:
       priority: 0
       middlewares:
         - bad-gateway-error-page@file
+        - tiktokanalytics-frame-ancestors
       tls:
         certResolver: letsencrypt
         domains:
           - main: tiktokanalytics.ickanz.easypanel.host
       entryPoints:
         - https
+  middlewares:
+    tiktokanalytics-frame-ancestors:
+      headers:
+        contentSecurityPolicy: "frame-ancestors 'self' https://ifp.blankschool.com.br"
   services:
     tiktokanalytics-web-fragment-0:
       loadBalancer:
